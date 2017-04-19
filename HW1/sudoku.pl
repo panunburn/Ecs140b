@@ -1,8 +1,9 @@
 /* ECS 140B Assignment 1 */
-/* Sudoku Solver */
+/* the simple version of Sudoku Solver */
 /*	Name: Weiran Guo
 		ID: 912916431
-		test1 works with approximately 33 seconds on my co
+		test0 all work
+		test1 works with approximately 28 seconds on csif machine
 */
 
 
@@ -209,8 +210,8 @@ printsudoku([H|T]) :-
 
 
 % Expects a list of lists 9 by 9 grid.
-sudoku(L) :- %a simple version of sudoku solver
-	L = [
+sudoku(L) :-                                       % the simple version of sudoku solver
+	L = [																						 % match each item in matrix with a variable name
 	      [A1, A2, A3, A4, A5, A6, A7, A8, A9],
 	      [B1, B2, B3, B4, B5, B6, B7, B8, B9],
         [C1, C2, C3, C4, C5, C6, C7, C8, C9],
@@ -222,7 +223,7 @@ sudoku(L) :- %a simple version of sudoku solver
         [I1, I2, I3, I4, I5, I6, I7, I8, I9]
 			],
 
-	Values = [1,2,3,4,5,6,7,8,9],
+	Values = [1,2,3,4,5,6,7,8,9], 									 % 9 possible values
 
 	/*Square1 = [A1, A2, A3,B1, B2, B3,C1, C2, C3],
 	Square2 = [A4, A5, A6,B4, B5, B6,C4, C5, C6],
@@ -234,30 +235,30 @@ sudoku(L) :- %a simple version of sudoku solver
 	Square8 = [G4, G5, G6,H4, H5, H6,I4, I5, I6],
 	Square9 = [G7, G8, G9,H7, H8, H9,I7, I8, I9],*/
 
-	minidoku(A1, A2, A3,B1, B2, B3,C1, C2, C3,Values,Values,Values,Values,Values,Values,Values, RR1,RR2,RR3,CR1,CR2,CR3),
-	minidoku(A4, A5, A6,B4, B5, B6,C4, C5, C6,RR1,RR2,RR3,Values,Values,Values,Values, RR11,RR12,RR13,CR11,CR12,CR13),
-	minidoku(A7, A8, A9,B7, B8, B9,C7, C8, C9,RR11,RR12,RR13,Values,Values,Values,Values,RR21,RR22,RR23,CR21,CR22,CR23),
-	minidoku(D1, D2, D3,E1, E2, E3,F1, F2, F3,Values,Values,Values,CR1,CR2,CR3,Values,RR31,RR32,RR33,CR31,CR32,CR33),
-	minidoku(D4, D5, D6,E4, E5, E6,F4, F5, F6,RR31,RR32,RR33,CR11,CR12,CR13,Values,RR41,RR42,RR43,CR41,CR42,CR43),
-	minidoku(D7, D8, D9,E7, E8, E9,F7, F8, F9,RR41,RR42,RR43,CR21,CR22,CR23,Values,RR51,RR52,RR53,CR51,CR52,CR53),
-	minidoku(G1, G2, G3,H1, H2, H3,I1, I2, I3,Values,Values,Values,CR31,CR32,CR33,Values,RR61,RR62,RR63,CR61,CR62,CR63),
-	minidoku(G4, G5, G6,H4, H5, H6,I4, I5, I6,RR61,RR62,RR63,CR41,CR42,CR43,Values,RR71,RR72,RR73,CR71,CR72,CR73),
-	minidoku(G7, G8, G9,H7, H8, H9,I7, I8, I9,RR71,RR72,RR73,CR51,CR52,CR53,Values,RR81,RR82,RR83,CR81,CR82,CR83).
+	minidoku(A1, A2, A3,B1, B2, B3,C1, C2, C3,Values,Values,Values,Values,Values,Values,Values, RR1,RR2,RR3,CR1,CR2,CR3), % attemp Square1 with no constraint, i.e all 9 values in the list
+	minidoku(A4, A5, A6,B4, B5, B6,C4, C5, C6,RR1,RR2,RR3,Values,Values,Values,Values, RR11,RR12,RR13,CR11,CR12,CR13),    % attemp Square2 with row constraints that were generate from Square1
+	minidoku(A7, A8, A9,B7, B8, B9,C7, C8, C9,RR11,RR12,RR13,Values,Values,Values,Values,RR21,RR22,RR23,CR21,CR22,CR23),  % attemp Square3 with row constraints that were generate from Square2
+	minidoku(D1, D2, D3,E1, E2, E3,F1, F2, F3,Values,Values,Values,CR1,CR2,CR3,Values,RR31,RR32,RR33,CR31,CR32,CR33),     % attemp Square4 with col constraints that were generate from Square1
+	minidoku(D4, D5, D6,E4, E5, E6,F4, F5, F6,RR31,RR32,RR33,CR11,CR12,CR13,Values,RR41,RR42,RR43,CR41,CR42,CR43),        % attemp Square5 with both row(Square4) and col(Square2) constraints
+	minidoku(D7, D8, D9,E7, E8, E9,F7, F8, F9,RR41,RR42,RR43,CR21,CR22,CR23,Values,RR51,RR52,RR53,CR51,CR52,CR53),				% attemp Square6 with both row(Square5) amd col(Square3) constraints
+	minidoku(G1, G2, G3,H1, H2, H3,I1, I2, I3,Values,Values,Values,CR31,CR32,CR33,Values,RR61,RR62,RR63,CR61,CR62,CR63),  % attemp Square7 with col constraints that were generate from Square4
+	minidoku(G4, G5, G6,H4, H5, H6,I4, I5, I6,RR61,RR62,RR63,CR41,CR42,CR43,Values,RR71,RR72,RR73,CR71,CR72,CR73),				% attemp Square8 with both row(Square7) and col(Square5) constraints
+	minidoku(G7, G8, G9,H7, H8, H9,I7, I8, I9,RR71,RR72,RR73,CR51,CR52,CR53,Values,RR81,RR82,RR83,CR81,CR82,CR83).				% attemp Square9 with both row(Square8) and col(Square6) constraints
 
 % YOU NEED TO COMPLETE THIS PREDICATE, PLUS PROVIDE ANY HELPER PREDICATES BELOW.
-minidoku(A1, A2, A3,B1, B2, B3,C1, C2, C3, RG1,RG2,RG3,CG1,CG2,CG3,SG1, RR1,RR2,RR3,CR1,CR2,CR3) :-
-	remain(RG1,CG1,SG1,A1,Rowrem11,Colrem11,Sqrrem1), % First three elements in row 1
+minidoku(A1, A2, A3,B1, B2, B3,C1, C2, C3, RG1,RG2,RG3,CG1,CG2,CG3,SG1, RR1,RR2,RR3,CR1,CR2,CR3) :-        % try to solve the minidoku 3*3 with row, colume and square constraints
+	remain(RG1,CG1,SG1,A1,Rowrem11,Colrem11,Sqrrem1),           % three elements in row 1
 	remain(Rowrem11,CG2,Sqrrem1,A2,Rowrem12,Colrem12,Sqrrem2),
 	remain(Rowrem12,CG3,Sqrrem2,A3,Rowrem13,Colrem13,Sqrrem3),
 
-	remain(RG2,Colrem11,Sqrrem3,B1,Rowrem21,Colrem21,Sqrrem4), %First three elements in row 2
+	remain(RG2,Colrem11,Sqrrem3,B1,Rowrem21,Colrem21,Sqrrem4),  % three elements in row 2
 	remain(Rowrem21,Colrem12,Sqrrem4,B2,Rowrem22,Colrem22,Sqrrem5),
 	remain(Rowrem22,Colrem13,Sqrrem5,B3,Rowrem23,Colrem23,Sqrrem6),
 
-	remain(RG3,Colrem21,Sqrrem6,C1,Rowrem31,Colrem31,Sqrrem7), %First three elements in row 3
+	remain(RG3,Colrem21,Sqrrem6,C1,Rowrem31,Colrem31,Sqrrem7),  % three elements in row 3
 	remain(Rowrem31,Colrem22,Sqrrem7,C2,Rowrem32,Colrem32,Sqrrem8),
 	remain(Rowrem32,Colrem23,Sqrrem8,C3,Rowrem33,Colrem33,Sqrrem9),
-	RR1 = Rowrem13,
+	RR1 = Rowrem13,    %return the corresponding remain list
 	RR2 = Rowrem23,
 	RR3 = Rowrem33,
 	CR1 = Colrem31,
@@ -265,7 +266,7 @@ minidoku(A1, A2, A3,B1, B2, B3,C1, C2, C3, RG1,RG2,RG3,CG1,CG2,CG3,SG1, RR1,RR2,
 	CR3 = Colrem33,
 	SR1 = Sqrrem9.
 
-remain(Rows,Cols,Sqrs,Val,Rowrem,Colrem,Sqrrem):-      %this predicate find the remaining possible list that exclude the current guess variable
+remain(Rows,Cols,Sqrs,Val,Rowrem,Colrem,Sqrrem):-      %this predicate find the remaining possible list by excluding the current guess variable
 	exclude(Rows,Val,Rowrem),
 	exclude(Cols,Val,Colrem),
 	exclude(Sqrs,Val,Sqrrem).
