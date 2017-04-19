@@ -1,5 +1,10 @@
 /* ECS 140B Assignment 1 */
 /* Sudoku Solver */
+/*	Name: Weiran Guo
+		ID: 912916431
+		test1 works with approximately 33 seconds on my co
+*/
+
 
 /* For this assignment you will need to implement your 
 own 9x9 Sudoku solver in SWI-Prolog.  Basically you 
@@ -83,7 +88,7 @@ test0a :-
              [_,7,_,3,2,5,6,4,9],
              [2,5,4,6,8,9,7,3,1],
              [8,2,1,4,3,7,5,_,6],
-	     [4,9,6,8,5,2,3,1,7],
+             [4,9,6,8,5,2,3,1,7],
              [7,3,_,9,6,1,8,2,4],
              [5,8,9,7,1,3,4,6,2],
              [3,1,7,2,4,6,9,8,5],
@@ -159,7 +164,7 @@ test1 :-
              [_,_,8,3,_,5,6,_,_],
              [2,_,_,_,_,_,_,_,1],
              [8,_,_,4,_,7,_,_,6],
-	     [_,_,6,_,_,_,3,_,_],
+             [_,_,6,_,_,_,3,_,_],
              [7,_,_,9,_,1,_,_,4],
              [5,_,_,_,_,_,_,_,2],
              [_,_,7,2,_,6,9,_,_],
@@ -173,7 +178,7 @@ test2 :-
              [_,8,_,_,7,_,_,_,_],
              [_,7,_,_,_,8,2,_,5],
              [4,_,_,_,_,_,3,1,_],
-	     [9,_,_,_,_,_,_,_,8],
+             [9,_,_,_,_,_,_,_,8],
              [_,1,5,_,_,_,_,_,4],
              [1,_,6,9,_,_,_,3,_],
              [_,_,_,_,2,_,_,6,_],
@@ -184,7 +189,7 @@ test2 :-
 test3 :-
 	L = [
              [_,4,3,_,8,_,2,5,_],
-	     [6,_,_,_,_,_,_,_,_],
+             [6,_,_,_,_,_,_,_,_],
              [_,_,_,_,_,1,_,9,4],
              [9,_,_,_,_,4,_,7,_],
              [_,_,_,6,_,8,_,_,_],
@@ -206,40 +211,88 @@ printsudoku([H|T]) :-
 % Expects a list of lists 9 by 9 grid.
 sudoku(L) :- %a simple version of sudoku solver
 	L = [
-	     [A1, A2, A3, A4, A5, A6, A7, A8, A9], 
-	     [B1, B2, B3, B4, B5, B6, B7, B8, B9],
-             [C1, C2, C3, C4, C5, C6, C7, C8, C9],
-             [D1, D2, D3, D4, D5, D6, D7, D8, D9],
-             [E1, E2, E3, E4, E5, E6, E7, E8, E9],
-             [F1, F2, F3, F4, F5, F6, F7, F8, F9],
-             [G1, G2, G3, G4, G5, G6, G7, G8, G9],
-             [H1, H2, H3, H4, H5, H6, H7, H8, H9],
-             [I1, I2, I3, I4, I5, I6, I7, I8, I9]],
+	      [A1, A2, A3, A4, A5, A6, A7, A8, A9],
+	      [B1, B2, B3, B4, B5, B6, B7, B8, B9],
+        [C1, C2, C3, C4, C5, C6, C7, C8, C9],
+        [D1, D2, D3, D4, D5, D6, D7, D8, D9],
+        [E1, E2, E3, E4, E5, E6, E7, E8, E9],
+        [F1, F2, F3, F4, F5, F6, F7, F8, F9],
+        [G1, G2, G3, G4, G5, G6, G7, G8, G9],
+        [H1, H2, H3, H4, H5, H6, H7, H8, H9],
+        [I1, I2, I3, I4, I5, I6, I7, I8, I9]
+			],
+
+	Values = [1,2,3,4,5,6,7,8,9],
+
+	/*Square1 = [A1, A2, A3,B1, B2, B3,C1, C2, C3],
+	Square2 = [A4, A5, A6,B4, B5, B6,C4, C5, C6],
+	Square3 = [A7, A8, A9,B7, B8, B9,C7, C8, C9],
+	Square4 = [D1, D2, D3,E1, E2, E3,F1, F2, F3],
+	Square5 = [D4, D5, D6,E4, E5, E6,F4, F5, F6],
+	Square6 = [D7, D8, D9,E7, E8, E9,F7, F8, F9],
+	Square7 = [G1, G2, G3,H1, H2, H3,I1, I2, I3],
+	Square8 = [G4, G5, G6,H4, H5, H6,I4, I5, I6],
+	Square9 = [G7, G8, G9,H7, H8, H9,I7, I8, I9],*/
+
+	minidoku(A1, A2, A3,B1, B2, B3,C1, C2, C3,Values,Values,Values,Values,Values,Values,Values, RR1,RR2,RR3,CR1,CR2,CR3),
+	minidoku(A4, A5, A6,B4, B5, B6,C4, C5, C6,RR1,RR2,RR3,Values,Values,Values,Values, RR11,RR12,RR13,CR11,CR12,CR13),
+	minidoku(A7, A8, A9,B7, B8, B9,C7, C8, C9,RR11,RR12,RR13,Values,Values,Values,Values,RR21,RR22,RR23,CR21,CR22,CR23),
+	minidoku(D1, D2, D3,E1, E2, E3,F1, F2, F3,Values,Values,Values,CR1,CR2,CR3,Values,RR31,RR32,RR33,CR31,CR32,CR33),
+	minidoku(D4, D5, D6,E4, E5, E6,F4, F5, F6,RR31,RR32,RR33,CR11,CR12,CR13,Values,RR41,RR42,RR43,CR41,CR42,CR43),
+	minidoku(D7, D8, D9,E7, E8, E9,F7, F8, F9,RR41,RR42,RR43,CR21,CR22,CR23,Values,RR51,RR52,RR53,CR51,CR52,CR53),
+	minidoku(G1, G2, G3,H1, H2, H3,I1, I2, I3,Values,Values,Values,CR31,CR32,CR33,Values,RR61,RR62,RR63,CR61,CR62,CR63),
+	minidoku(G4, G5, G6,H4, H5, H6,I4, I5, I6,RR61,RR62,RR63,CR41,CR42,CR43,Values,RR71,RR72,RR73,CR71,CR72,CR73),
+	minidoku(G7, G8, G9,H7, H8, H9,I7, I8, I9,RR71,RR72,RR73,CR51,CR52,CR53,Values,RR81,RR82,RR83,CR81,CR82,CR83).
 
 % YOU NEED TO COMPLETE THIS PREDICATE, PLUS PROVIDE ANY HELPER PREDICATES BELOW.
+minidoku(A1, A2, A3,B1, B2, B3,C1, C2, C3, RG1,RG2,RG3,CG1,CG2,CG3,SG1, RR1,RR2,RR3,CR1,CR2,CR3) :-
+	remain(RG1,CG1,SG1,A1,Rowrem11,Colrem11,Sqrrem1), % First three elements in row 1
+	remain(Rowrem11,CG2,Sqrrem1,A2,Rowrem12,Colrem12,Sqrrem2),
+	remain(Rowrem12,CG3,Sqrrem2,A3,Rowrem13,Colrem13,Sqrrem3),
 
+	remain(RG2,Colrem11,Sqrrem3,B1,Rowrem21,Colrem21,Sqrrem4), %First three elements in row 2
+	remain(Rowrem21,Colrem12,Sqrrem4,B2,Rowrem22,Colrem22,Sqrrem5),
+	remain(Rowrem22,Colrem13,Sqrrem5,B3,Rowrem23,Colrem23,Sqrrem6),
+
+	remain(RG3,Colrem21,Sqrrem6,C1,Rowrem31,Colrem31,Sqrrem7), %First three elements in row 3
+	remain(Rowrem31,Colrem22,Sqrrem7,C2,Rowrem32,Colrem32,Sqrrem8),
+	remain(Rowrem32,Colrem23,Sqrrem8,C3,Rowrem33,Colrem33,Sqrrem9),
+	RR1 = Rowrem13,
+	RR2 = Rowrem23,
+	RR3 = Rowrem33,
+	CR1 = Colrem31,
+	CR2 = Colrem32,
+	CR3 = Colrem33,
+	SR1 = Sqrrem9.
+
+remain(Rows,Cols,Sqrs,Val,Rowrem,Colrem,Sqrrem):-      %this predicate find the remaining possible list that exclude the current guess variable
+	exclude(Rows,Val,Rowrem),
+	exclude(Cols,Val,Colrem),
+	exclude(Sqrs,Val,Sqrrem).
+
+exclude([H|T],H,T).        % if guess variable is the head
+exclude([H|T],Val,[H|R]):- % if not on the head
+	exclude(T,Val,R).        % check body list
+
+/*alldifferent([]).
+alldifferent([X|Xs]) :-
+	different(X,Xs),
+	alldiffrent(Xs).
+
+different(X,[]).
+different(X,[H|T]) :-
+	\+ X = H,
+	different(X,T).
 
 validrow(Val,Row):-
 	value(Val),
 	Row = [H|T],
-	member(Val,
-	unique
+
 
 validcol(Val,Col):-
 
 validsquarr(Val,Square):-
 
-remain(Rows,Cols,Sqrs,Val,Rowrem,Colrem,Sqrrem):-
-	exclude(Rows,Val,Rowrem),
-	exclude(Cols,Val,Colrem),
-	exclude(Sqrs,Val,Sqrrem).
-
-exclude([H|T],H,T).
-exclude([H|T],Val,[H|R]:-
-	exclude(T,Val,R).
-
 transpose([],[]).
-transpose([F|R],Tm) :-
+transpose([F|R],Tm).*/
 
-transpose(Matrix,IMatrix):-
-	Matrix 
