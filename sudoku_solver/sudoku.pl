@@ -4,6 +4,8 @@
 		ID: 912916431
 		test0 all work
 		test1 works with approximately 28 seconds on csif machine
+		test3 works with approximately 144 seconds on csif machine
+		weirdly, test2 uses 12 minutes
 */
 
 
