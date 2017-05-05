@@ -18,6 +18,23 @@ play:-
 	player(FirstPlayer),
 	takeTurn(FirstPlayer).
 
+startNewGame :-
+	write("Start a new game?\nEnter "y." or "n."\n"),
+	read(A),
+	(A == y ->
+		write("Same game version?\nEnter "y." or "n."\n"),
+		read(B),
+		(B == y ->
+			initPlayer,
+			initDetectiveNotes,
+			write("\nGame setup finished.\n\n"),
+			play;
+		B == n ->
+			clue)
+		;
+	A == n ->
+		quitGame(quit)).
+
 displayTurnMenu :-
 	write("\nThe following actions are available:\n"),
 	write(" - checkDetectiveNotes\n"),
@@ -77,7 +94,12 @@ ourTurnLoop(Player):-
 		ourTurnLoop(Player);
 	Action == makeSuggestion ->
 		makeSuggestion(Player),
-		ourTurnLoop(Player);
+		write("Our turn ends.\n"),
+		(checkWin ->
+			startNewGame
+			;
+			nextPlayer(Player, Next),
+			takeTurn(Next));    %can add accusation function, also endTurn
 	Action == makeAccusation ->
 		write("not implemented yet\n"),
 		ourTurnLoop(Player);
@@ -93,6 +115,63 @@ ourTurnLoop(Player):-
 		write('Enter "menu." to see available actions\n\n'),
 		ourTurnLoop(Player)).
 
+checkWin :-
+	findall(S1, checkSuspect(S1), Knownsus),
+	findall(S2, suspect(S2), Allsus),
+	length(Knownsus,N1),
+	length(Allsus,N2),
+	N2 is N1 + 1,
+	findall(R1, checkRoom(R1), Knownroom),
+	findall(R2, room(R2), Allroom),
+	length(Knownroom,N3),
+	length(Allroom,N4),
+	
+
+checkSuspect(Item) :-
+	hasCard(_,Suspect),
+	suspect(Suspect),
+	Item = Suspect.
+
+makeAccusation(Player) :-
+	displayDetectiveNotes,
+	getSuspectSuggestion(S),
+	getWeaponSuggestion(W),
+	getRoomSuggestion(R),
+	nextPlayer(Player, N),
+	nl,
+	write(Player),
+	write(" accuses that it was\n").
+	write(S),
+	write(" with the "),
+	write(W),
+	write(" in the "),
+	write(R),
+	nl,
+	nl,
+	disproveAccusation(S, W, R, Player, N).
+
+disproveAccusation(S, W, R, Accusator, Next) :-
+	write("Is it true?\nEnter \"y.\" or \"n.\"\n"),
+	read(B),
+	(B == y ->
+		write("Player"), write(Accusator), write("wins the game!"),nl,
+		startNewGame;
+	B == n ->
+		disproveAccusationHelper).
+
+disproveAccusationHelper(S, W, R, Accusator, Next) :-
+	(ourPlayer(Accusator) ->
+		write("You are out!\n"),
+		startNewGame
+
+		;
+
+		write("Player", write(Accusator), write("out!\n"),
+		nextPlayer(P1,Accusator),
+		retract(nextPlayer(P1,Accusator)),
+		retract(nextPlayer(Accusator,Next)),
+		assert(nextPlayer(P1,Next)),
+		takeTurn(Next).
 
 makeSuggestion(Player) :-
 	displayDetectiveNotes,
@@ -102,7 +181,7 @@ makeSuggestion(Player) :-
 	nextPlayer(Player, N),
 	nl,
 	write(Player),
-	write(" suggests that it was\n"),
+	write(" suggests that it was\n"),   % can add a loop W.G
 	write(S),
 	write(" with the "),
 	write(W),
@@ -156,7 +235,7 @@ playerDisprove(S, W, R, Suggester, Disprover):-
 		nextPlayer(Disprover, N),
 		disproveSuggestion(S, W, R, Suggester, N);
 	B == y ->
-		write("we disproved him\n")).
+		write("we disproved him\n")). %can add guess function
 
 opponentDisprove(S, W, R, Suggester, Disprover):-
 	write("Can "),
@@ -179,7 +258,7 @@ opponentDisproveHelp(Suggester, Disprover):-
 
 		write(Disprover),
 		write(" showed card to "),
-		write(Suggester),
+		write(Suggester), %can add guess function
 		nl
 	).
 
@@ -216,7 +295,8 @@ opponentTurnLoop(Player):-
 		write('Enter "menu." to see available actions\n'),
 		opponentTurnLoop(Player)).
 
-quitGame(quit).
+quitGame(quit) :-
+	write("Thank you for your playing!\n").
 
 init :-
 	write('Clue Assistant V1.0\n\n'),
