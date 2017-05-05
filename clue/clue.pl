@@ -370,7 +370,7 @@ initPlayers :-
 	write('First enter the player who goes first,\n'),
 	write('then the player who goes second, and continue until the last player.\n'),
 	write('As before use only lowercase and single words per player.\n'),
-	write('After entering all players, enter "done." to finish\n'),
+	write('After entering all players, enter "done." to finish.\n'),
 	read(StartPlayer),
 	initPlayer(StartPlayer),
 	retract(nextPlayer(LastPlayer, done)),
