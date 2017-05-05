@@ -19,10 +19,10 @@ play:-
 	takeTurn(FirstPlayer).
 
 startNewGame :-
-	write("Start a new game?\nEnter "y." or "n."\n"),
+	write("Start a new game?\nEnter \"y.\" or \"n.\"\n"),
 	read(A),
 	(A == y ->
-		write("Same game version?\nEnter "y." or "n."\n"),
+		write("Same game version?\nEnter \"y.\" or \"n.\"\n"),
 		read(B),
 		(B == y ->
 			initPlayer,
@@ -41,6 +41,11 @@ displayTurnMenu :-
 	write(" - makeSuggestion\n"),
 	write(" - makeAccusation\n"),
 	write(" - endTurn\n"),
+	write(" - quitGame\n\n").
+
+displayOppoMenu :-
+	write("\nThe following actions are available:\n"),
+	write(" - checkDetectiveNotes\n"),
 	write(" - quitGame\n\n").
 
 displayDetectiveNotes :-
@@ -99,9 +104,9 @@ ourTurnLoop(Player):-
 			startNewGame
 			;
 			nextPlayer(Player, Next),
-			takeTurn(Next));    %can add accusation function, also endTurn
+			takeOpponentTurn(Next));    %can add accusation function, also endTurn
 	Action == makeAccusation ->
-		write("not implemented yet\n"),
+		makeAccusation,
 		ourTurnLoop(Player);
 	Action == endTurn ->
 		nextPlayer(Player, Next),
@@ -125,12 +130,51 @@ checkWin :-
 	findall(R2, room(R2), Allroom),
 	length(Knownroom,N3),
 	length(Allroom,N4),
-	
+	N4 is N3 + 1,
+	findall(W1, checkWeapon(R1), Knownweapon),
+	findall(W2, weapon(R2), Allweapon),
+	length(Knownweapon,N5),
+	length(Allweapon,N6),
+	N6 is N5 + 1,
+	subtract(Knownsus,Allsus,[Remnsus|_]),
+	subtract(Knownroom,Allroom,[Remroom|_]),
+	subtract(Knownweapon,Allweapon,[Remweapon|_]),
+	%A1 = [Remnsus|_],
+	%A2 = [Remroom|_],
+	%A3 = [Remweapon|_]
+	write("Make this suggestion then you could win!\n"),
+	write("It was "), write(Remnsus), write("with "), write(Remweapon), write("in the "), write(Remroom),nl,
+	write("Did you win? Type \"y.\" or \"n.\"\n"),
+	read(C),
+	(C == y ->
+		write("Congratulations!\n"),
+		startNewGame;
+	C == n ->
+		write("Weird! something goes wrong!\n"),
+		startNewGame).
+
+subtract([], _, []).
+subtract([Head|Tail], L2, L3) :-
+	member(Head, L2),
+	!,
+	subtract(Tail, L2, L3).
+subtract([Head|Tail1], L2, [Head|Tail3]) :-
+	subtract(Tail1, L2, Tail3).
 
 checkSuspect(Item) :-
 	hasCard(_,Suspect),
 	suspect(Suspect),
 	Item = Suspect.
+
+checkRoom(Item) :-
+	hasCard(_,Room),
+	room(Room),
+	Item = Room.
+
+checkWeapon(Item) :-
+	hasCard(_,Weapon),
+	weapon(Weapon),
+	Item = Weapon.
 
 makeAccusation(Player) :-
 	displayDetectiveNotes,
@@ -140,7 +184,7 @@ makeAccusation(Player) :-
 	nextPlayer(Player, N),
 	nl,
 	write(Player),
-	write(" accuses that it was\n").
+	write(" accuses that it was\n"),
 	write(S),
 	write(" with the "),
 	write(W),
@@ -157,7 +201,7 @@ disproveAccusation(S, W, R, Accusator, Next) :-
 		write("Player"), write(Accusator), write("wins the game!"),nl,
 		startNewGame;
 	B == n ->
-		disproveAccusationHelper).
+		disproveAccusationHelper(S, W, R, Accusator, Next)).
 
 disproveAccusationHelper(S, W, R, Accusator, Next) :-
 	(ourPlayer(Accusator) ->
@@ -166,12 +210,12 @@ disproveAccusationHelper(S, W, R, Accusator, Next) :-
 
 		;
 
-		write("Player", write(Accusator), write("out!\n"),
+		write("Player"), write(Accusator), write("out!\n"),
 		nextPlayer(P1,Accusator),
 		retract(nextPlayer(P1,Accusator)),
 		retract(nextPlayer(Accusator,Next)),
 		assert(nextPlayer(P1,Next)),
-		takeTurn(Next).
+		takeTurn(Next)).
 
 makeSuggestion(Player) :-
 	displayDetectiveNotes,
@@ -266,24 +310,24 @@ takeOpponentTurn(Player) :-
 	write("\nIts "),
 	write(Player),
 	write("'s turn.\n"),
-	write('Enter "menu." to see available actions\n'),
+	write('Enter "menu." anytime to see available actions\n'),
 	opponentTurnLoop(Player).
 
 opponentTurnLoop(Player):-
+	write("Does "), write(Player), write(" make a suggestion?\n enter y/n \n"),
+
 	read(Action),
 	(Action == menu ->
-		displayTurnMenu,
+		displayOppoMenu,
 		opponentTurnLoop(Player);
 	Action == checkDetectiveNotes ->
 		displayDetectiveNotes,
 		opponentTurnLoop(Player);
-	Action == makeSuggestion ->
+	Action == y ->
 		makeSuggestion(Player),
+		opponentAccusation(Player),
 		opponentTurnLoop(Player);
-	Action == makeAccusation ->
-		write("not implemented yet\n"),
-		opponentTurnLoop(Player);
-	Action == endTurn ->
+	Action == n ->
 		nextPlayer(Player, Next),
 		takeTurn(Next);
 	Action == quitGame ->
@@ -294,6 +338,25 @@ opponentTurnLoop(Player):-
 		write(" is not a valid action.\n"),
 		write('Enter "menu." to see available actions\n'),
 		opponentTurnLoop(Player)).
+
+opponentAccusation(Player) :-
+	write("Does "), write(Player), write(" make an accusation? y\n\n"),
+	read(Action),
+	(Action == menu ->
+		displayOppoMenu,
+		opponentAccusation(Player);
+	Action == y ->
+		makeAccusation(Player);
+	Action == n ->
+		nextPlayer(Player, Next),
+		takeTurn(Next);
+	Action == quitGame ->
+		quitGame(quit);
+	% else
+		nl,
+		write(Action),
+		write(" is not a valid action.\n"),
+		opponentAccusation(Player)).
 
 quitGame(quit) :-
 	write("Thank you for your playing!\n").
