@@ -157,7 +157,8 @@ chooseFirst :-
 	write("---It was "), write(Remnsus), write(" with "), write(Remweapon), write(" in the "), write(Remroom),nl,
 	followLoop.
 
-cheat
+cheat :-
+	.
 generatePossibility(P) :-
     findall(S1, checkSuspect(S1), Knownsus),
     findall(S2, suspect(S2), Allsus),
