@@ -1,4 +1,6 @@
-character(mustard).
+
+
+/*character(mustard).
 character(scarlet).
 character(plum).
 character(green).
@@ -20,7 +22,7 @@ room(ballroom).
 room(conservatory).
 room(billiard).
 room(library).
-room(study).
+room(study).*/
 
 clue :-
 	init,
@@ -28,13 +30,7 @@ clue :-
 	play.
 
 init :-
-	assert(unknown(mustard)),
-	assert(unknown(scarlet)),
-	assert(unknown(plum)),
-	assert(unknown(green)),
-	assert(unknown(white)),
-	assert(unknown(peacock)),
-	assert(unknown(hall
+	write("Please enter")
 menu :-
 	write('Clue Assistant V1.0\n'),
 	write('------Character list:\n'),
