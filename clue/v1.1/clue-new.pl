@@ -5,6 +5,7 @@ dynamic player/1.
 dynamic nextPlayer/2.
 dynamic ourPlayer/1.
 dynamic hasCard/2.
+dynamic hasno/2.
 
 
 
@@ -114,6 +115,8 @@ ourTurnLoop(Player):-
 	Action == endTurn ->
 		nextPlayer(Player, Next),
 		takeTurn(Next);
+	Action == cheat ->
+		cheat(Player);
 	Action == quitGame ->
 		quitGame(quit);
 	% else
@@ -157,8 +160,22 @@ chooseFirst :-
 	write("---It was "), write(Remnsus), write(" with "), write(Remweapon), write(" in the "), write(Remroom),nl,
 	followLoop.
 
-cheat :-
-	.
+cheat(Player) :-
+	suspect(A),
+	allHasno(A),
+	weapon(B),
+	allHasno(B),
+	room(C),
+	allHasno(C),
+	write("Make this suggestion so you can get more information:\n"),
+	write("---It was "), write(A), write(" with "), write(B), write(" in the "), write(C),nl,
+	nextPlayer(Player, N),
+	disproveSuggestion(S, W, R, Player, N).
+
+allHasno(Name) :-
+	(/+ hasCard(_,Name)).
+
+
 generatePossibility(P) :-
     findall(S1, checkSuspect(S1), Knownsus),
     findall(S2, suspect(S2), Allsus),
@@ -200,7 +217,7 @@ checkWin :-
 	A2 = [Remroom|_],
 	A3 = [Remweapon|_],
 	nl,nl,
-	write("Make this suggestion then you could win!\n"),nl,nl,
+	write("Make this accusation then you could win!\n"),nl,nl,
 	write("---It was "), write(Remnsus), write(" with "), write(Remweapon), write(" in the "), write(Remroom),nl,
 	followLoop.
 
@@ -330,8 +347,13 @@ getRoomSuggestion(R) :-
 		write("\nInvalid Room.\n"),
 		getRoomSuggestion(R)).
 
-disproveSuggestion(_, _, _, P, P):-
-	write("\nWow! Nobody could disprove the suggestion.\n\n").
+disproveSuggestion(S, W, R, P, P):-
+	write("\nWow! Nobody could disprove the suggestion, we know no one (exclude "), write(P), write(" has "),
+	write(S), write(" "), write(W), write(" and "), write(R), write("!\n\n"),
+	findall(M,player(M),L1),
+	subtract(L1,[P],I1),
+	disproveAll(S,W,R,I1).
+
 disproveSuggestion(S, W, R, Suggester, Disprover):-
 	(ourPlayer(Disprover) ->
 		playerDisprove(S, W, R, Suggester, Disprover)
@@ -341,16 +363,26 @@ disproveSuggestion(S, W, R, Suggester, Disprover):-
 
 		).
 
+disproveAll(S,W,R,[]).
+disproveAll(S,W,R,[H|T] :-
+	assert(hasno(H,S)),
+	assert(hasno(H,W)),
+	assert(hasno(H,R)),
+	disproveAll(S,W,R,T).
 
 playerDisprove(S, W, R, Suggester, Disprover):-
-	write("we would select a card to show here"),
-	write("can you disprove him\nEnter \"y.\" or \"n.\"\n"),
-	read(B),
-	(B == n ->
-		nextPlayer(Disprover, N),
-		disproveSuggestion(S, W, R, Suggester, N);
-	B == y ->
-		write("we disproved him\n")). %can add guess function
+	write("we would select a card to show here\n"),
+	%write("can you disprove him\nEnter \"y.\" or \"n.\"\n"),
+    (hasCard(Disprover,S) ->
+    	write("show him "), write(S),nl,nl;
+    hasCard(Disprover,W) ->
+    	write("show him "), write(W),nl,nl;
+    hasCard(Disprover,R) ->
+    	write("show him "), write(R),nl,nl;
+    write("You don't have any of card, so do nothing\n"),
+    nextPlayer(Disprover, N),
+    disproveSuggestion(S, W, R, Suggester, N)).
+
 
 opponentDisprove(S, W, R, Suggester, Disprover):-
 	write("Can "),
@@ -358,6 +390,7 @@ opponentDisprove(S, W, R, Suggester, Disprover):-
 	write(' disprove the suggestion?\nEnter "y." or "n."\n'),
 	read(B),
 	(B == n ->
+		disproveAll(S,W,R,[Disprover]),
 		nextPlayer(Disprover, N),
 		disproveSuggestion(S, W, R, Suggester, N);
 	B == y ->
