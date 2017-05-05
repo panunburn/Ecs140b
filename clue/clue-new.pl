@@ -86,6 +86,7 @@ takeTurn(Player) :-
 
 takeOurTurn(Player) :-
 	write("\nIts your turn.\n"),
+	displayDetectiveNotes,
 	write('Enter "menu." to see available actions\n\n'),
 	ourTurnLoop(Player).
 
@@ -136,19 +137,19 @@ checkWin :-
 	length(Knownweapon,N5),
 	length(Allweapon,N6),
 	N6 is N5 + 1,
-	subtract(Knownsus,Allsus,[Remnsus|_]),
-	subtract(Knownroom,Allroom,[Remroom|_]),
-	subtract(Knownweapon,Allweapon,[Remweapon|_]),
-	%A1 = [Remnsus|_],
-	%A2 = [Remroom|_],
-	%A3 = [Remweapon|_]
-	write("Make this suggestion then you could win!\n"),
-	write("It was "), write(Remnsus), write("with "), write(Remweapon), write("in the "), write(Remroom),nl,
+	subtract(Allsus,Knownsus,A1),
+	subtract(Allroom,Knownroom,A2),
+	subtract(Allroom,Knownweapon,A3),
+	A1 = [Remnsus|_],
+	A2 = [Remroom|_],
+	A3 = [Remweapon|_],
+	nl,nl,
+	write("Make this suggestion then you could win!\n"),nl,nl,
+	write("---It was "), write(Remnsus), write(" with "), write(Remweapon), write(" in the "), write(Remroom),nl,
 	write("Did you win? Type \"y.\" or \"n.\"\n"),
 	read(C),
 	(C == y ->
-		write("Congratulations!\n"),
-		startNewGame;
+		write("Congratulations!\n");
 	C == n ->
 		write("Weird! something goes wrong!\n"),
 		startNewGame).
