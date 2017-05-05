@@ -47,21 +47,45 @@ printline([H|T]) :-
 play :-
 	getValidNumPlayer(NumP),	
 	assert(numplayer(NumP)),
-	getValidCards.
+	iD,
+	getValidCards,
+	turns.
+
+turns :-
+	write("Who's turn right now? e.g. 'green'\n"),
+	read(Name),
+
+iD :-
+	write("Which character did you choose?\n"),
+	read(Name),
+	((character(Name),
+	assert(id(Name)));
+	(\+ character(Name),
+	write("invalid name, please enter again\n"),
+	iD)).
 
 getValidCards :-
 	write('What are the cards you have right now? (eg."pipe." or "green." You can enter one at a time, enter "fin." if done)\n'),
 	read(Name),
-	validName(Name),
+	(validName(Name,0)
+	;
+	(\+ validName(Name,0),
+	write("Please enter a valid card name\n"),
+	getValidCards)).
 
-validName(fin).
-validName(Name) :-
+validName(fin,_).
+validName(Name,ID) :-
 	character(Name),
-	
-validName(Name) :-
-	room(Name).
-validName(Name) :- 
+	assert(known(character(Name),ID)),
+	getValidCards.
+validName(Name,ID) :-
+	room(Name),
+	assert(known(room(Name),ID)),
+	getValidCards.
+validName(Name,ID) :- 
 	weapon(Name),
+	assert(known(weapon(Name),ID)),
+	getValidCards.
 
 getValidNumPlayer(NumPlayer) :-
         write('How many players are there? (It is better to have 3-6 players)\n example input: "3."\n'),
