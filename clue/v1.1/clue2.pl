@@ -8,7 +8,7 @@ dynamic ourPlayer/1.
 dynamic hasCard/2.
 dynamic hasno/2.
 dynamic out/1.
-
+dynamic reachroom/1.
 
 clue :-
     init,
@@ -164,10 +164,7 @@ chooseFirst :-
 
 cheat(Player) :-
 
-    dealRoom(Player),
-   
-    nextPlayer(Player, N),
-    disproveSuggestion(S, W, R, Player, N).
+    dealRoom(Player).
 
 dealRoom(Player) :-
     displayDetectiveNotes,
@@ -181,13 +178,28 @@ dealRoom(Player) :-
 	findall(R,reachroom(R),L1),
 	(length(L1,1) ->
 		L1 = [H|T],
-		R1 = H;
+		write("Make this suggestion so you can get more information:\n"),
+		write("---It was "), write(S), write(" with "), write(W), write(" in the "), write(H),nl,
+		R4 = H,
+		retractall(reachroom(_));
 	(bestroom(L1,R2) ->
 		write("Make this suggestion so you can get more information:\n"),
-    		write("---It was "), write(S), write(" with "), write(W), write(" in the "), write(R2),nl;
+    		write("---It was "), write(S), write(" with "), write(W), write(" in the "), write(R2),nl,
+		R4 = R2,
+		retractall(reachroom(_));
 	L1 = [H3|T3],
 	write("Make this suggestion so you can get more information:\n"),
-	write("---It was "), write(S), write(" with "), write(W), write(" in the "), write(R2),nl
+	write("---It was "), write(S), write(" with "), write(W), write(" in the "), write(H3),nl)),
+	R4 = H3,
+	retractall(reachroom(_));
+    Action == none ->
+	true;
+    room(Action) ->
+	assert(reachroom(Action)),
+	dealRoom(Player)),
+    nextPlayer(Player, N),
+    disproveSuggestion(S, W, R4, Player, N).
+	
 	
 bestroom([H|T],R) :-
 	allHasno(H),
