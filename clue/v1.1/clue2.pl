@@ -85,9 +85,9 @@ takeTurn(Player) :-
 	(out(Player) ->
 		nextPlayer(Player,Next),
     		takeTurn(Next);
-	(ourPlayer(Player) ->
+	ourPlayer(Player) ->
 		takeOurTurn(Player);
-	takeOpponentTurn(Player))).
+	takeOpponentTurn(Player)).
 
 takeOurTurn(Player) :-
     write("\nIts your turn.\n"),
@@ -118,7 +118,15 @@ ourTurnLoop(Player):-
         nextPlayer(Player, Next),
         takeTurn(Next);
     Action == cheat ->
-        cheat(Player);
+        cheat(Player),
+	
+	write("Our turn ends\n"),
+	(checkWin ->
+            startNewGame
+            ;
+            risky,
+            nextPlayer(Player, Next),
+            takeOpponentTurn(Next));
     Action == quitGame ->
         quitGame(quit);
     % else
@@ -163,18 +171,14 @@ chooseFirst :-
     followLoop.
 
 cheat(Player) :-
-
-    dealRoom(Player).
-
-dealRoom(Player) :-
     displayDetectiveNotes,
     write("Which room can you reach? (type all, end with 'done.' or 'none' if you can't\n"),
     read(Action),
     (Action == done ->
    	suspect(S),
-	allHasno(S),
+	allHasno(S),!,
     	weapon(W),
-	allHasno(W),
+	allHasno(W),!,
 	findall(R,reachroom(R),L1),
 	(length(L1,1) ->
 		L1 = [H|T],
@@ -190,22 +194,23 @@ dealRoom(Player) :-
 	L1 = [H3|T3],
 	write("Make this suggestion so you can get more information:\n"),
 	write("---It was "), write(S), write(" with "), write(W), write(" in the "), write(H3),nl)),
+	followloop2,
 	R4 = H3,
+	nextPlayer(Player,N),
+	disproveSuggestion(S,W,R4,Player,N),!,
 	retractall(reachroom(_));
     Action == none ->
 	true;
     room(Action) ->
 	assert(reachroom(Action)),
-	dealRoom(Player)),
-    nextPlayer(Player, N),
-    disproveSuggestion(S, W, R4, Player, N).
+	cheat(Player)).
 	
 	
 bestroom([H|T],R) :-
 	allHasno(H),
 	R = H.
 bestroom([H|T],R) :-
-	allHasno(T,R).
+	bestroom(T,R).
 
 allHasno(Name) :-
     (\+ hasCard(_,Name)).
@@ -274,7 +279,16 @@ followLoop :-
     %else
     followLoop).
 
-
+followloop2 :-
+    write("Did you follow my instruction?\n y/n"),
+    read(D),
+    (D == y ->
+        write("Well done!\n");
+    D == n ->
+        write("Please don't do that\n"),
+        followloop2;
+    %else
+    followloop2).
 
 subtract([], _, []).
 subtract([Head|Tail], L2, L3) :-
@@ -311,7 +325,6 @@ makeAccusation(Player) :-
     write(S),
     write(" with the "),
     write(W),
-    write(" in the "),
     write(R),
     nl,
     nl,
@@ -427,7 +440,8 @@ opponentDisprove(S, W, R, Suggester, Disprover):-
         nextPlayer(Disprover, N),
         disproveSuggestion(S, W, R, Suggester, N);
     B == y ->
-        opponentDisproveHelp(Suggester, Disprover)).
+        opponentDisproveHelp(Suggester, Disprover);
+    opponentDisprove(S, W, R, Suggester, Disprover)).
 
 
 opponentDisproveHelp(Suggester, Disprover):-
@@ -470,7 +484,7 @@ opponentTurnLoop(Player):-
         takeTurn(Next);
 
     Action == quitGame ->
-        quitGame(quit);
+        quitGame(quit),!;
     % else
         nl,
         write(Action),
@@ -490,7 +504,7 @@ opponentAccusation(Player) :-
         nextPlayer(Player, Next),
         takeTurn(Next);
     Action == quitGame ->
-        quitGame(quit);
+        quitGame(quit),!;
     % else
         nl,
         write(Action),
@@ -498,7 +512,8 @@ opponentAccusation(Player) :-
         opponentAccusation(Player)).
 
 quitGame(quit) :-
-    write("Thank you for your playing!\n").
+    write("Thank you for your playing!\n"),
+    halt.
 
 init :-
     write('Clue Assistant V1.0\n\n'),
@@ -510,7 +525,7 @@ init :-
 
 initOut :-
     retractall(out(_)),
-    assert(out(none)).
+    assert(out(impossible_name233)).
 
     
 initVersion :-
@@ -622,8 +637,10 @@ initSuspect :-
 
 initSuspect(done).
 initSuspect(Suspect) :-
+    (suspect(Suspect) ->
+	initSuspect;
     assert(suspect(Suspect)),
-    initSuspect.
+    initSuspect).
 
 
 initWeapon :-
@@ -632,8 +649,10 @@ initWeapon :-
 
 initWeapon(done).
 initWeapon(Weapon) :-
+    (weapon(Weapon) ->
+	initWeapon;
     assert(weapon(Weapon)),
-    initWeapon.
+    initWeapon).
 
 
 initRoom :-
@@ -642,8 +661,10 @@ initRoom :-
 
 initRoom(done).
 initRoom(Room) :-
+    (room(Room) ->
+	initRoom;
     assert(room(Room)),
-    initRoom.
+    initRoom).
 
 
 initPlayers :-
