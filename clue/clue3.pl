@@ -8,9 +8,6 @@ dynamic ourPlayer/1.
 dynamic hasCard/2.
 dynamic hasno/2.
 dynamic out/1.
-dynamic group/2.
-
-
 
 
 clue :-
@@ -30,16 +27,14 @@ startNewGame :-
         write("Same game version?\nEnter \"y.\" or \"n.\"\n"),
         read(B),
         (B == y ->
-            initPlayers,
+            initPlayer,
             initDetectiveNotes,
             write("\nGame setup finished.\n\n"),
             play;
         B == n ->
-            clue;
-            startNewGame)
+            clue)
         ;
-    
-        write("Thank you for your playing!\n"),
+    A == n ->
         quitGame(quit)).
 
 displayTurnMenu :-
@@ -87,9 +82,6 @@ printDNoteLines([H|T]) :-
     printDNoteLines(T).
 
 takeTurn(Player) :-
-    write("about to trim\n"),
-    trimAllGroups(),
-    write("successfully trimmed\n"),
     (out(Player) ->
         nextPlayer(Player,Next),
             takeTurn(Next);
@@ -118,16 +110,16 @@ ourTurnLoop(Player):-
             ;
             risky,
             nextPlayer(Player, Next),
-            takeTurn(Next));    %can add accusation function, also endTurn
+            takeOpponentTurn(Next));    %can add accusation function, also endTurn
     Action == makeAccusation ->
-        makeAccusation(Player);
+        makeAccusation,
+        ourTurnLoop(Player);
     Action == endTurn ->
         nextPlayer(Player, Next),
         takeTurn(Next);
     Action == cheat ->
         cheat(Player);
     Action == quitGame ->
-        write("Thank you for your playing!\n"),
         quitGame(quit);
     % else
         nl,
@@ -171,16 +163,37 @@ chooseFirst :-
     followLoop.
 
 cheat(Player) :-
-    suspect(S),
-    allHasno(S),
-    weapon(W),
-    allHasno(W),
-    room(R),
-    allHasno(R),
-    write("Make this suggestion so you can get more information:\n"),
-    write("---It was "), write(S), write(" with "), write(W), write(" in the "), write(R),nl,
+
+    dealRoom(Player),
+   
     nextPlayer(Player, N),
     disproveSuggestion(S, W, R, Player, N).
+
+dealRoom(Player) :-
+    displayDetectiveNotes,
+    write("Which room can you reach? (type all, end with 'done.' or 'none' if you can't\n"),
+    read(Action),
+    (Action == done ->
+    suspect(S),
+    allHasno(S),
+        weapon(W),
+    allHasno(W),
+    findall(R,reachroom(R),L1),
+    (length(L1,1) ->
+        L1 = [H|T],
+        R1 = H;
+    (bestroom(L1,R2) ->
+        write("Make this suggestion so you can get more information:\n"),
+            write("---It was "), write(S), write(" with "), write(W), write(" in the "), write(R2),nl;
+    L1 = [H3|T3],
+    write("Make this suggestion so you can get more information:\n"),
+    write("---It was "), write(S), write(" with "), write(W), write(" in the "), write(R2),nl
+    
+bestroom([H|T],R) :-
+    allHasno(H),
+    R = H.
+bestroom([H|T],R) :-
+    allHasno(T,R).
 
 allHasno(Name) :-
     (\+ hasCard(_,Name)).
@@ -237,7 +250,7 @@ followLoop :-
     (D == y ->
         write("Did you win? Type \"y.\" or \"n.\"\n"),
         read(C),
-        (C == y -> 
+        (C == y ->
             write("Congratulations!\n");
         C == n ->
             write("Unfortunately, you lose\n"),
@@ -292,61 +305,26 @@ makeAccusation(Player) :-
     nl,
     disproveAccusation(S, W, R, Player, N).
 
-% these functions do most of the fancy work
- createGroup(Player, List) :-
-    findall(Card, (member(Card, List), \+hasno(Player, Card)), L),
-    ([A|[]] = L -> shieldAssertHasCard(Player, A);
-
-        shieldAssertGroup(Player, List)).
-
-
-
- shieldAssertGroup(Player, List) :-
-(\+group(Player,List)->assert(group(Player,List));write("")).
-
-shieldAssertHasCard(Player, Card) :-
-(\+hasCard(Player,Card)->
-    assert(hasCard(Player,Card)),
-    disproveAllOthers(Card, Player)
-    ; write("")).
-
-trimGroups(Player):-
-    findall(L, group(Player, L), LL),
-    trimGroupsHelp(Player, LL).
-
-trimGroupsHelp(_, []).
-trimGroupsHelp(Player, [H|T]) :-
-    createGroup(Player, H), 
-    trimGroupsHelp(Player, T).
-
-trimAllGroups():-
-    findall(Player, player(Player), L),
-    trimAllGroupsHelp(L).
-
-trimAllGroupsHelp([]).
-trimAllGroupsHelp([H|T]) :-
-    trimGroups(H),
-    trimAllGroupsHelp(T).
-
-
 disproveAccusation(S, W, R, Accusator, Next) :-
-    write("Was the accusation correct?\nEnter \"y.\" or \"n.\"\n"),
+    write("Is it true?\nEnter \"y.\" or \"n.\"\n"),
     read(B),
     (B == y ->
-        write("Player"), write(Accusator), write("wins the game!\n"),nl,
+        write("Player"), write(Accusator), write("wins the game!"),nl,
         startNewGame;
     B == n ->
         disproveAccusationHelper(S, W, R, Accusator, Next)).
 
 disproveAccusationHelper(S, W, R, Accusator, Next) :-
     (ourPlayer(Accusator) ->
-        write("Sorry, that means you're out!\nI can no longer help you this game.\n\n"),
+        write("You are out!\n"),
         startNewGame
 
         ;
 
-        write("Player "), write(Accusator), write(" is out!\n"),
-        assert(out(Accusator))).
+        write("Player "), write(Accusator), write(" out!\n"),
+        nextPlayer(P1,Accusator),
+        assert(out(Accusator)),
+        takeTurn(Next)).
 
 makeSuggestion(Player) :-
     displayDetectiveNotes,
@@ -391,7 +369,8 @@ getRoomSuggestion(R) :-
         getRoomSuggestion(R)).
 
 disproveSuggestion(S, W, R, P, P):-
-    write("\nWow! Nobody could disprove the suggestion.\n"),
+    write("\nWow! Nobody could disprove the suggestion, we know no one (exclude "), write(P), write(" has "),
+    write(S), write(" "), write(W), write(" and "), write(R), write("!\n\n"),
     findall(M,player(M),L1),
     subtract(L1,[P],I1),
     disproveAll(S,W,R,I1).
@@ -407,54 +386,23 @@ disproveSuggestion(S, W, R, Suggester, Disprover):-
 
 disproveAll(_,_,_,[]).
 disproveAll(S,W,R,[H|T]) :-
-    shieldAssertHasno(H,S),
-    shieldAssertHasno(H,W),
-    shieldAssertHasno(H,R),
+    assert(hasno(H,S)),
+    assert(hasno(H,W)),
+    assert(hasno(H,R)),
     disproveAll(S,W,R,T).
 
-disproveAllOthers(Card, Player):-
-    findall(M,player(M),L1),
-    subtract(L1,[Player],L2),
-    disproveAll(Card, L2).
-
-disproveAll(_, []).
-disproveAll(Card, [H|T]) :-
-    shieldAssertHasno(H,Card),
-    disproveAll(Card, T).
-
-
-% make sure no redundant functions created
-shieldAssertHasno(Player, Card) :-
-(\+hasno(Player,Card)->assert(hasno(Player,Card))).
-
 playerDisprove(S, W, R, Suggester, Disprover):-
-    findall(Card,(member(Card, [S, W, R]),hasCard(Disprover, Card)),L),
-    (L == [] ->
-        continueLoop("You cannot disprove the suggestion."),
-        nextPlayer(Disprover, N),
-        disproveSuggestion(S, W, R, Suggester, N);
-    L = [H|[]] ->
-        write("You must disprove the suggestion. \nYou can only show the card: "),
-        write(H),
-        continueLoop(".");
-
-        getValidDisprove(L)).
-    
-
-
-getValidDisprove(L):-
-        write("You must disprove the suggestion.\n"),
-        write("Select which of the following cards to show:\n"),
-        printline(L),
-        read(C),
-        (\+member(C, L) -> getValidDisprove(L); write("")).
-
-continueLoop(Message) :-
-    write(Message),
-    nl,
-    write("Enter \"y.\" to continue.\n"),
-    read(A),
-    (A \= y -> continueLoop(Message); write("")).
+    write("we would select a card to show here\n"),
+    %write("can you disprove him\nEnter \"y.\" or \"n.\"\n"),
+    (hasCard(Disprover,S) ->
+        write("show him "), write(S),nl,nl;
+    hasCard(Disprover,W) ->
+        write("show him "), write(W),nl,nl;
+    hasCard(Disprover,R) ->
+        write("show him "), write(R),nl,nl;
+    write("You don't have any of card, so do nothing\n"),
+    nextPlayer(Disprover, N),
+    disproveSuggestion(S, W, R, Suggester, N)).
 
 
 opponentDisprove(S, W, R, Suggester, Disprover):-
@@ -467,36 +415,20 @@ opponentDisprove(S, W, R, Suggester, Disprover):-
         nextPlayer(Disprover, N),
         disproveSuggestion(S, W, R, Suggester, N);
     B == y ->
-        opponentDisproveHelp(S, W, R, Suggester, Disprover);
-
-        opponentDisprove(S, W, R, Suggester, Disprover)).
+        opponentDisproveHelp(Suggester, Disprover)).
 
 
-getValidDisprove2(C, L):-
-        write("Enter card shown to you.\n"),
-        read(C2), 
-        (\+member(C2, L) -> 
-            write("Card shown must be one of the following:\n"),
-            printline(L),
-            nl,
-            getValidDisprove2(C, L);
-
-            C = C2).
-
-opponentDisproveHelp(S,W,R,Suggester, Disprover):-
+opponentDisproveHelp(Suggester, Disprover):-
     (ourPlayer(Suggester) -> 
-        getValidDisprove2(C, [S, W, R]),
-        shieldAssertHasCard(Disprover, C)
+        write("Enter card shown\n"),
+        read(C), 
+        assert(hasCard(Disprover, C))
         ;
 
         write(Disprover),
         write(" showed card to "),
-        write(Suggester), 
-        nl,
-        %can add guess function
-        createGroup(Disprover, [S, W, R])
-
-
+        write(Suggester), %can add guess function
+        nl
     ).
 
 takeOpponentTurn(Player) :-
@@ -507,7 +439,7 @@ takeOpponentTurn(Player) :-
     opponentTurnLoop(Player).
 
 opponentTurnLoop(Player):-
-    write("\nDoes "), write(Player), write(" make a suggestion? Enter y/n \n"),
+    write("Does "), write(Player), write(" make a suggestion?\n enter y/n \n"),
 
     read(Action),
     (Action == menu ->
@@ -519,16 +451,13 @@ opponentTurnLoop(Player):-
     Action == y ->
         makeSuggestion(Player),
         opponentAccusation(Player),
-        nextPlayer(Player, Next),
-        takeTurn(Next);
+        opponentTurnLoop(Player);
     Action == n ->
         opponentAccusation(Player),
         nextPlayer(Player, Next),
         takeTurn(Next);
 
     Action == quitGame ->
-        write("Thank you for your playing!\n"),
-
         quitGame(quit);
     % else
         nl,
@@ -538,16 +467,17 @@ opponentTurnLoop(Player):-
         opponentTurnLoop(Player)).
 
 opponentAccusation(Player) :-
-    write("Does "), write(Player), write(" make an accusation? Enter y/n\n"),
+    write("Does "), write(Player), write(" make an accusation? y/n\n"),
     read(Action),
     (Action == menu ->
         displayOppoMenu,
         opponentAccusation(Player);
     Action == y ->
         makeAccusation(Player);
-    Action == n -> write("");
+    Action == n ->
+        nextPlayer(Player, Next),
+        takeTurn(Next);
     Action == quitGame ->
-        write("Thank you for your playing!\n"),
         quitGame(quit);
     % else
         nl,
@@ -555,9 +485,8 @@ opponentAccusation(Player) :-
         write(" is not a valid action.\n"),
         opponentAccusation(Player)).
 
-quitGame(quit).
-
-
+quitGame(quit) :-
+    write("Thank you for your playing!\n").
 
 init :-
     write('Clue Assistant V1.0\n\n'),
@@ -570,7 +499,6 @@ init :-
 initOut :-
     retractall(out(_)),
     assert(out(none)).
-
 
     
 initVersion :-
@@ -588,9 +516,8 @@ initVersion :-
     read(X),
     reInitVersion(X).
 
-
+reInitVersion(n):- initVersion.
 reInitVersion(y).
-reInitVersion(_):- initVersion.
 
 displayCardLising() :-
     write('------Character list:\n'),
@@ -728,8 +655,8 @@ initPlayers :-
     read(X),
     reInitPlayers(X).
 
+reInitPlayers(n):- initPlayers.
 reInitPlayers(y).
-reInitPlayers(_):- initPlayers.
 
 
 
@@ -762,15 +689,6 @@ getOurPlayer(Player) :-
 recordOurCards(Player) :-
     % clears old initializations
     retractall(hasCard(_,_)),
-    retractall(hasno(_,_)),
-    retractall(group(_,_)),
-    assert(group(done,_)),
-
-
-
-    % temp for insertion stuff
-    assert(hasno(done, done)),
-
     write("\nEnter the cards that you've been dealt.\n"),
     write('When finished, enter "done."\n'),
     write("Names must exactly match this program's game setup.\n"),
@@ -778,19 +696,14 @@ recordOurCards(Player) :-
     read(Card),
     recordCards(Player, Card).
 
-recordCards(_, done):-
-    retract(hasno(done, done)).
-
+recordCards(_, done).
 recordCards(Player, Card) :-
     (suspect(Card)->
-        assert(hasCard(Player, Card)),
-        disproveAllOthers(Card, Player); 
+        assert(hasCard(Player, Card)); 
     weapon(Card)->
-        assert(hasCard(Player, Card)),
-        disproveAllOthers(Card, Player);
+        assert(hasCard(Player, Card)); 
     room(Card)->
-        assert(hasCard(Player, Card)),
-        disproveAllOthers(Card, Player);
+        assert(hasCard(Player, Card));
      Card == showSetup ->
         write("\n"),
         displayCardLising,
@@ -799,9 +712,7 @@ recordCards(Player, Card) :-
         write('Card "'),
         write(Card),
         write('" is not in this game\n'),
-        write('To see which cards are, enter "showSetup"\n');
-
-         write("")),
+        write('To see which cards are, enter "showSetup"\n')),
     read(Card2),
     recordCards(Player, Card2).
 
@@ -810,4 +721,3 @@ printline([]).
 printline([H|T]) :-
     write(H),nl,
     printline(T).
-
