@@ -1,5 +1,5 @@
--- print result is just a placeholder
-rush_hour start = print_result
+-- might also want to do some formatting here to make it print out pretty
+rush_hour start = reverse (statesearch [start] [])
 
 
 -- DFS state space search algorithm
@@ -16,19 +16,21 @@ statesearch :: [[String]] -> [[String]] -> [[String]]
 -- siblings is the tail of unexplored list, it contains sibling nodes to state
 statesearch (state:siblings) path
     -- if nothing to process, backtrack to parent by retruning null
-   | null unexplored              = []
+   | null (state:siblings)          = []
     -- if found goal, return solution to puzzle
-   | isGoal state    = state:path
+   | isGoal state                   = state:path
     -- try to expand current node and contune DFS
-   | (not (null processChildren))          = processChildren
-    -- if couldn't expand node, then move to next sibling node
-   | otherwise                    = 
-        statesearch (siblings) path
+   | (not (null processChildren))   = processChildren
+    -- if no solution found (processChildren returned null)
+    -- then move to next sibling node
+   | otherwise                      = 
+        statesearch siblings path
     -- define processChildren
     -- need to generate new states (children nodes) from current state
+    -- also need to ensure no loops by making sure new states are not also in path
     -- the path to the child node is the path to the parent, plus the parent
      where processChildren = statesearch 
-                       (generateNewStates (state)) 
+                       (generateNewStates state path) 
                        (state:path)
 
 
