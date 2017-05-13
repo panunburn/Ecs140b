@@ -34,6 +34,9 @@ statesearch (state:siblings) path
                        (state:path)
 
 
+generateNewstate state path
+  concat [generateLeft generateRight generateUp generateDown]
+
 -- Check if state satisfies the goal.
 -- The state meets the goal iff the last two characters 
 -- of the third string in state are 'X'
