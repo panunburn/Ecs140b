@@ -1,2 +1,2 @@
-This is Rush Hour project.
+This is the Rush_Hour project.
 ThinkFun, Inc., www.thinkfun.com
