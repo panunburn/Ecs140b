@@ -1,17 +1,22 @@
+-- rush_hour project
+-- Weiran Guo(912916431)
+-- Allen Speers(912113700)
+-- this project uses heuristic method to judge the value of states
+--
 -- might also want to do some formatting here to make it print out pretty
 -- nevermind, he said we don't have to do that
 
 -- load build-in sort function in haskell
 
-module RushHour
-(
-rush_hour, statesearch, isGoal, generateNewStates, findNewRight, newRow,
-generateNewRight, generateNewRightHelp, rowsToState, trimDuplicates, mirrorState,
-mirrorAllStates, generateNewLeft, generateNewDown, generateNewUp, evalState,
-compareStates, charPos, countChar
-)   where 
+-- module RushHour
+-- (
+-- rush_hour, statesearch, isGoal, generateNewStates, findNewRight, newRow,
+-- generateNewRight, generateNewRightHelp, rowsToState, trimDuplicates, mirrorState,
+-- mirrorAllStates, generateNewLeft, generateNewDown, generateNewUp, evalState,
+-- compareStates, charPos, countChar
+-- )   where 
 import Data.List
-
+import Debug.Trace (trace)
 rush_hour start = (reverse (statesearch [start] []))
 
 
@@ -37,7 +42,7 @@ statesearch states path
    | (not (null processChildren))   = processChildren
     -- if no solution found (processChildren returned null)
     -- then move to next sibling node
-   | otherwise                      = 
+   | otherwise                      =
         statesearch (tail states) path
     -- define processChildren
     -- need to generate new states (children nodes) from current state
@@ -118,7 +123,7 @@ rowsToState (t:ts) above row below = (above ++ [(newRow row t 0)] ++ below):(row
 trimDuplicates :: [[String]] -> [[String]] -> [[String]]
 trimDuplicates _ [] = []
 trimDuplicates path (state:ss) 
-    | elem state path = trimDuplicates ss path
+    | elem state path = trimDuplicates path ss
     | otherwise       = state:(trimDuplicates path ss)
 
 -- probably can use map for these, but lol
@@ -157,8 +162,9 @@ generateNewUp parentState = map transpose (generateNewLeft (transpose parentStat
 -- a greedy algorithm
 evalState state
     | null state = 10000
-    | otherwise  = emptyOnRight + 5 * blockOnRight
-    where xtailpos = (charPos 'X' (state!!2));
+    | otherwise  =  (6 - (charPos 'X' (state!!2)))*10 - emptyOnRight
+-- emptyOnRight + 5 * blockOnRight
+    where xtailpos = (charPos 'X' (reverse(state!!2)));
           emptyOnRight = (countChar '-' (drop xtailpos (state!!2)))
           blockOnRight = (5 - xtailpos - emptyOnRight)
 
