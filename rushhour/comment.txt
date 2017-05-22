@@ -1,0 +1,11 @@
+-- this project uses heuristic method to judge the value of states
+-- our heuristic is as follows, where a smaller number is better:
+--
+-- (100 * (total positions to the right of "XX") - 50 * (empty spaces to the right of "XX"))
+--
+-- The idea is that the closer "XX" is to the right, the closer the puzzle is to being solved.
+-- "XX" is closer to the right when it has fewer empty or blocked positions to its right.
+-- Also, positions filled by other vehicles require more moves to free up, 
+-- so filled spaces are twice as costly as empty spaces for our heuristic calculation.  
+--
+-- We implement our heruistic by sorting the states by this value in our state generation function.

@@ -17,15 +17,14 @@ statesearch :: [[String]] -> [[String]] -> [[String]]
 -- siblings is the tail of unexplored list, it contains sibling nodes to state
 statesearch (state:siblings) path
     -- if nothing to process, backtrack to parent by retruning null
-   | null (state:siblings)          = []
+   | null (state)          = []
     -- if found goal, return solution to puzzle
    | isGoal state                   = state:path
     -- try to expand current node and contune DFS
    | (not (null processChildren))   = processChildren
     -- if no solution found (processChildren returned null)
     -- then move to next sibling node
-   | otherwise                      = 
-        statesearch siblings path
+   | otherwise                      = statesearch siblings path
     -- define processChildren
     -- need to generate new states (children nodes) from current state
     -- also need to ensure no loops by making sure new states are not also in path
@@ -49,9 +48,7 @@ isGoal notSolution = False
 -- Assumes states are given in preprocessed format.
 generateNewStates :: [String] -> [[String]] -> [[String]]
 generateNewStates currState path =
-    trimDuplicates path (concat  [generateNewRight currState, generateNewDown currState,
-                                  generateNewUp currState, generateNewLeft currState])
-
+    trimDuplicates path (concat  [generateNewRight currState, generateNewDown currState, generateNewUp currState, generateNewLeft currState])
 
 -- Finds position, length, and character represenation of a car that can be moved right
 findNewRight :: String -> Char -> Int -> Int -> Int -> [(Char, Int, Int)] -> [(Char, Int, Int)]
@@ -102,7 +99,7 @@ rowsToState (t:ts) above row below = (above ++ [(newRow row t 0)] ++ below):(row
 trimDuplicates :: [[String]] -> [[String]] -> [[String]]
 trimDuplicates _ [] = []
 trimDuplicates path (state:ss) 
-    | elem state path = trimDuplicates ss path
+    | elem state path = trimDuplicates path ss
     | otherwise       = state:(trimDuplicates path ss)
 
 -- probably can use map for these, but lol
