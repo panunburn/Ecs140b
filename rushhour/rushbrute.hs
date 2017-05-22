@@ -1,3 +1,8 @@
+-- Brute Force version of rush_hour project
+-- Weiran Guo(912916431)
+-- Allen Speers(912113700)
+-- compare to the heuristic version, some input might not be solved in reasonable time
+
 -- might also want to do some formatting here to make it print out pretty
 -- nevermind, he said we don't have to do that
 rush_hour start = reverse (statesearch [start] [])
@@ -15,24 +20,25 @@ rush_hour start = reverse (statesearch [start] [])
 statesearch :: [[String]] -> [[String]] -> [[String]]
 -- state is head of unexplored list, it is the current node being processed
 -- siblings is the tail of unexplored list, it contains sibling nodes to state
-statesearch (state:siblings) path
+-- states = (state:siblings)
+statesearch states path
     -- if nothing to process, backtrack to parent by retruning null
-   | null (state:siblings)          = []
+   | null states          = []
     -- if found goal, return solution to puzzle
-   | isGoal state                   = state:path
+   | isGoal (head states)                   = (head states):path
     -- try to expand current node and contune DFS
    | (not (null processChildren))   = processChildren
     -- if no solution found (processChildren returned null)
     -- then move to next sibling node
    | otherwise                      = 
-        statesearch siblings path
+        statesearch (tail states) path
     -- define processChildren
     -- need to generate new states (children nodes) from current state
     -- also need to ensure no loops by making sure new states are not also in path
     -- the path to the child node is the path to the parent, plus the parent
      where processChildren = statesearch 
-                       (generateNewStates state path) 
-                       (state:path)
+                       (generateNewStates (head states) path) 
+                       ((head states):path)
 
 
 -- Check if state satisfies the goal.
@@ -102,7 +108,7 @@ rowsToState (t:ts) above row below = (above ++ [(newRow row t 0)] ++ below):(row
 trimDuplicates :: [[String]] -> [[String]] -> [[String]]
 trimDuplicates _ [] = []
 trimDuplicates path (state:ss) 
-    | elem state path = trimDuplicates ss path
+    | elem state path = trimDuplicates path ss
     | otherwise       = state:(trimDuplicates path ss)
 
 -- probably can use map for these, but lol

@@ -7,14 +7,7 @@
 -- nevermind, he said we don't have to do that
 
 -- load build-in sort function in haskell
-
--- module RushHour
--- (
--- rush_hour, statesearch, isGoal, generateNewStates, findNewRight, newRow,
--- generateNewRight, generateNewRightHelp, rowsToState, trimDuplicates, mirrorState,
--- mirrorAllStates, generateNewLeft, generateNewDown, generateNewUp, evalState,
--- compareStates, charPos, countChar
--- )   where 
+ 
 import Data.List
 import Debug.Trace (trace)
 rush_hour start = (reverse (statesearch [start] []))
@@ -157,12 +150,17 @@ generateNewUp :: [String] -> [[String]]
 generateNewUp parentState = map transpose (generateNewLeft (transpose parentState))
 
 -- heuristic part
--- evaluation is based on empty spaces to the right of "XX" + 5*(blocked spaces to the right of "XX")
+-- it is the best function in our attemps
+-- evaluation is based on number of elements between the first 'X' and the last position
+-- it is also based on the number of empty space '-' on the right
+-- f = (dist(fst('X'),last) * 100 - (num(empty space on right)) * 50
 -- lower is better
--- a greedy algorithm
+-- a heuristic function
+-- most important value is the number of elements till the destination, the less the better
+-- second important value is the number of empty spaces till the destination, the more the better
 evalState state
-    | null state = 10000
-    | otherwise  =  (6 - (charPos 'X' (state!!2)))*10 - emptyOnRight
+    | null state = 1000000
+    | otherwise  =  (6 - charPos 'X' (state!!2))*100 - emptyOnRight*50
 -- emptyOnRight + 5 * blockOnRight
     where xtailpos = (charPos 'X' (reverse(state!!2)));
           emptyOnRight = (countChar '-' (drop xtailpos (state!!2)))
@@ -172,7 +170,8 @@ evalState state
 compareStates s1 s2
     | (evalState s1) > (evalState s2) = GT
     | (evalState s2) > (evalState s1) = LT
-    | otherwise                       = EQ
+-- otherwise evaluations are the same, check the '-', come first means greater, with less priority
+    | otherwise                       = compare s1 s2
 charPos:: Char -> String -> Int
 charPos cha str
     | cha == (head str)  = 0
