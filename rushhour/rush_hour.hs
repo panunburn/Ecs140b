@@ -12,7 +12,7 @@ compareStates, charPos, countChar
 )   where 
 import Data.List
 
-rush_hour start = reverse (statesearch [start] [])
+rush_hour start = (reverse (statesearch [start] []))
 
 
 -- DFS state space search algorithm
