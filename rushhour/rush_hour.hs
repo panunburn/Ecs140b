@@ -150,7 +150,7 @@ generateNewUp :: [String] -> [[String]]
 generateNewUp parentState = map transpose (generateNewLeft (transpose parentState))
 
 -- heuristic part
--- it is the best function in our attemps
+-- we tried several functions and choose one with least steps
 -- evaluation is based on number of elements between the first 'X' and the last position
 -- it is also based on the number of empty space '-' on the right
 -- f = (dist(fst('X'),last) * 100 - (num(empty space on right)) * 50
@@ -162,6 +162,7 @@ evalState state
     | null state = 1000000
     | otherwise  =  (6 - charPos 'X' (state!!2))*100 - emptyOnRight*50
 -- emptyOnRight + 5 * blockOnRight
+-- (6 - xtailpos)*100 - emptyOnRight*50
     where xtailpos = (charPos 'X' (reverse(state!!2)));
           emptyOnRight = (countChar '-' (drop xtailpos (state!!2)))
           blockOnRight = (5 - xtailpos - emptyOnRight)
@@ -171,7 +172,10 @@ compareStates s1 s2
     | (evalState s1) > (evalState s2) = GT
     | (evalState s2) > (evalState s1) = LT
 -- otherwise evaluations are the same, check the '-', come first means greater, with less priority
-    | otherwise                       = compare s1 s2
+    | otherwise                       = checkslide s1 s2
+
+checkslide s1 s2 = compare s1 s2
+
 charPos:: Char -> String -> Int
 charPos cha str
     | cha == (head str)  = 0
