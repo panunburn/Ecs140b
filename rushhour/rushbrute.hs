@@ -1,17 +1,5 @@
 -- might also want to do some formatting here to make it print out pretty
 -- nevermind, he said we don't have to do that
-
--- load build-in sort function in haskell
-
-module RushHour
-(
-rush_hour, statesearch, isGoal, generateNewStates, findNewRight, newRow,
-generateNewRight, generateNewRightHelp, rowsToState, trimDuplicates, mirrorState,
-mirrorAllStates, generateNewLeft, generateNewDown, generateNewUp, evalState,
-compareStates, charPos, countChar
-)   where 
-import Data.List
-
 rush_hour start = reverse (statesearch [start] [])
 
 
@@ -27,25 +15,24 @@ rush_hour start = reverse (statesearch [start] [])
 statesearch :: [[String]] -> [[String]] -> [[String]]
 -- state is head of unexplored list, it is the current node being processed
 -- siblings is the tail of unexplored list, it contains sibling nodes to state
--- states = (state:siblings)
-statesearch states path
+statesearch (state:siblings) path
     -- if nothing to process, backtrack to parent by retruning null
-   | null states          = []
+   | null (state:siblings)          = []
     -- if found goal, return solution to puzzle
-   | isGoal (head states)                   = (head states):path
+   | isGoal state                   = state:path
     -- try to expand current node and contune DFS
    | (not (null processChildren))   = processChildren
     -- if no solution found (processChildren returned null)
     -- then move to next sibling node
    | otherwise                      = 
-        statesearch (tail states) path
+        statesearch siblings path
     -- define processChildren
     -- need to generate new states (children nodes) from current state
     -- also need to ensure no loops by making sure new states are not also in path
     -- the path to the child node is the path to the parent, plus the parent
      where processChildren = statesearch 
-                       (generateNewStates (head states) path) 
-                       ((head states):path)
+                       (generateNewStates state path) 
+                       (state:path)
 
 
 -- Check if state satisfies the goal.
@@ -61,12 +48,9 @@ isGoal notSolution = False
 -- already in the path (to avoid cycles).
 -- Assumes states are given in preprocessed format.
 generateNewStates :: [String] -> [[String]] -> [[String]]
-generateNewStates currState path
-    | currState == []    = []
-    | otherwise          = 
-                          sortBy compareStates $ 
-                           (trimDuplicates path (concat  [generateNewRight currState, generateNewDown currState,
-                                                          generateNewUp currState, generateNewLeft currState]))
+generateNewStates currState path =
+    trimDuplicates path (concat  [generateNewRight currState, generateNewDown currState,
+                                  generateNewUp currState, generateNewLeft currState])
 
 
 -- Finds position, length, and character represenation of a car that can be moved right
@@ -139,42 +123,13 @@ generateNewLeft parentState = mirrorAllStates (generateNewRight (mirrorState par
 
 -- this doesn't seem to be alredy imported in my terminal for some reason
 -- so i'm copying the source code for transpose here
--- import the Data.List
--- transpose               :: [[a]] -> [[a]]
--- transpose []             = []
--- transpose ([]   : xss)   = transpose xss
--- transpose ((x:xs) : xss) = (x : [h | (h:_) <- xss]) : transpose (xs : [ t | (_:t) <- xss])
+transpose               :: [[a]] -> [[a]]
+transpose []             = []
+transpose ([]   : xss)   = transpose xss
+transpose ((x:xs) : xss) = (x : [h | (h:_) <- xss]) : transpose (xs : [ t | (_:t) <- xss])
 
 generateNewDown :: [String] -> [[String]]
 generateNewDown parentState = map transpose (generateNewRight (transpose parentState))
 
 generateNewUp :: [String] -> [[String]]
 generateNewUp parentState = map transpose (generateNewLeft (transpose parentState))
-
--- heuristic part
--- evaluation is based on empty spaces to the right of "XX" + 5*(blocked spaces to the right of "XX")
--- lower is better
--- a greedy algorithm
-evalState state
-    | null state = 10000
-    | otherwise  = emptyOnRight + 5 * blockOnRight
-    where xtailpos = (charPos 'X' (state!!2));
-          emptyOnRight = (countChar '-' (drop xtailpos (state!!2)))
-          blockOnRight = (5 - xtailpos - emptyOnRight)
-
--- our own comparison function for evaluating states
-compareStates s1 s2
-    | (evalState s1) > (evalState s2) = GT
-    | (evalState s2) > (evalState s1) = LT
-    | otherwise                       = EQ
-charPos:: Char -> String -> Int
-charPos cha str
-    | cha == (head str)  = 0
-    | otherwise          = 1 + charPos cha (tail str)
-
-countChar:: Char -> String -> Int
-countChar cha str
-    | null str           = 0
-    | cha == (head str)  = 1 + countChar cha (tail str)
-    | otherwise          = countChar cha (tail str)
-

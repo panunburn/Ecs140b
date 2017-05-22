@@ -1,40 +1,3 @@
-<<<<<<< HEAD
-
-
-/*character(mustard).
-character(scarlet).
-character(plum).
-character(green).
-character(white).
-character(peacock).
-
-weapon(pipe).
-weapon(knife).
-weapon(wrench).
-weapon(candlestick).
-weapon(rope).
-weapon(revolver).
-
-room(hall).
-room(lounge).
-room(diningroom).
-room(kitchen).
-room(ballroom).
-room(conservatory).
-room(billiard).
-room(library).
-room(study).*/
-
-clue :-
-	init,
-	menu,
-	play.
-
-init :-
-	write("Please enter")
-menu :-
-	write('Clue Assistant V1.0\n'),
-=======
 dynamic suspect/1.
 dynamic weapon/1.
 dynamic room/1.
@@ -55,12 +18,34 @@ play:-
 	player(FirstPlayer),
 	takeTurn(FirstPlayer).
 
+startNewGame :-
+	write("Start a new game?\nEnter \"y.\" or \"n.\"\n"),
+	read(A),
+	(A == y ->
+		write("Same game version?\nEnter \"y.\" or \"n.\"\n"),
+		read(B),
+		(B == y ->
+			initPlayer,
+			initDetectiveNotes,
+			write("\nGame setup finished.\n\n"),
+			play;
+		B == n ->
+			clue)
+		;
+	A == n ->
+		quitGame(quit)).
+
 displayTurnMenu :-
 	write("\nThe following actions are available:\n"),
 	write(" - checkDetectiveNotes\n"),
 	write(" - makeSuggestion\n"),
 	write(" - makeAccusation\n"),
 	write(" - endTurn\n"),
+	write(" - quitGame\n\n").
+
+displayOppoMenu :-
+	write("\nThe following actions are available:\n"),
+	write(" - checkDetectiveNotes\n"),
 	write(" - quitGame\n\n").
 
 displayDetectiveNotes :-
@@ -101,6 +86,7 @@ takeTurn(Player) :-
 
 takeOurTurn(Player) :-
 	write("\nIts your turn.\n"),
+	displayDetectiveNotes,
 	write('Enter "menu." to see available actions\n\n'),
 	ourTurnLoop(Player).
 
@@ -114,9 +100,14 @@ ourTurnLoop(Player):-
 		ourTurnLoop(Player);
 	Action == makeSuggestion ->
 		makeSuggestion(Player),
-		ourTurnLoop(Player);
+		write("Our turn ends.\n"),
+		(checkWin ->
+			startNewGame
+			;
+			nextPlayer(Player, Next),
+			takeOpponentTurn(Next));    %can add accusation function, also endTurn
 	Action == makeAccusation ->
-		write("not implemented yet\n"),
+		makeAccusation,
 		ourTurnLoop(Player);
 	Action == endTurn ->
 		nextPlayer(Player, Next),
@@ -130,6 +121,102 @@ ourTurnLoop(Player):-
 		write('Enter "menu." to see available actions\n\n'),
 		ourTurnLoop(Player)).
 
+checkWin :-
+	findall(S1, checkSuspect(S1), Knownsus),
+	findall(S2, suspect(S2), Allsus),
+	length(Knownsus,N1),
+	length(Allsus,N2),
+	N2 is N1 + 1,
+	findall(R1, checkRoom(R1), Knownroom),
+	findall(R2, room(R2), Allroom),
+	length(Knownroom,N3),
+	length(Allroom,N4),
+	N4 is N3 + 1,
+	findall(W1, checkWeapon(W1), Knownweapon),
+	findall(W2, weapon(W2), Allweapon),
+	length(Knownweapon,N5),
+	length(Allweapon,N6),
+	N6 is N5 + 1,
+	subtract(Allsus,Knownsus,A1),
+	subtract(Allroom,Knownroom,A2),
+	subtract(Allroom,Knownweapon,A3),
+	A1 = [Remnsus|_],
+	A2 = [Remroom|_],
+	A3 = [Remweapon|_],
+	nl,nl,
+	write("Make this suggestion then you could win!\n"),nl,nl,
+	write("---It was "), write(Remnsus), write(" with "), write(Remweapon), write(" in the "), write(Remroom),nl,
+	write("Did you win? Type \"y.\" or \"n.\"\n"),
+	read(C),
+	(C == y ->
+		write("Congratulations!\n");
+	C == n ->
+		write("Weird! something goes wrong!\n"),
+		startNewGame).
+
+subtract([], _, []).
+subtract([Head|Tail], L2, L3) :-
+	member(Head, L2),
+	!,
+	subtract(Tail, L2, L3).
+subtract([Head|Tail1], L2, [Head|Tail3]) :-
+	subtract(Tail1, L2, Tail3).
+
+checkSuspect(Item) :-
+	hasCard(_,Suspect),
+	suspect(Suspect),
+	Item = Suspect.
+
+checkRoom(Item) :-
+	hasCard(_,Room),
+	room(Room),
+	Item = Room.
+
+checkWeapon(Item) :-
+	hasCard(_,Weapon),
+	weapon(Weapon),
+	Item = Weapon.
+
+makeAccusation(Player) :-
+	displayDetectiveNotes,
+	getSuspectSuggestion(S),
+	getWeaponSuggestion(W),
+	getRoomSuggestion(R),
+	nextPlayer(Player, N),
+	nl,
+	write(Player),
+	write(" accuses that it was\n"),
+	write(S),
+	write(" with the "),
+	write(W),
+	write(" in the "),
+	write(R),
+	nl,
+	nl,
+	disproveAccusation(S, W, R, Player, N).
+
+disproveAccusation(S, W, R, Accusator, Next) :-
+	write("Is it true?\nEnter \"y.\" or \"n.\"\n"),
+	read(B),
+	(B == y ->
+		write("Player"), write(Accusator), write("wins the game!"),nl,
+		startNewGame;
+	B == n ->
+		disproveAccusationHelper(S, W, R, Accusator, Next)).
+
+disproveAccusationHelper(S, W, R, Accusator, Next) :-
+	(ourPlayer(Accusator) ->
+		write("You are out!\n"),
+		startNewGame
+
+		;
+
+		write("Player"), write(Accusator), write("out!\n"),
+		nextPlayer(P1,Accusator),
+		retract(nextPlayer(P1,Accusator)),
+		retract(nextPlayer(Accusator,Next)),
+		assert(nextPlayer(P1,Next)),
+		takeTurn(Next)).
 
 makeSuggestion(Player) :-
 	displayDetectiveNotes,
@@ -139,7 +226,7 @@ makeSuggestion(Player) :-
 	nextPlayer(Player, N),
 	nl,
 	write(Player),
-	write(" suggests that it was\n"),
+	write(" suggests that it was\n"),   % can add a loop W.G
 	write(S),
 	write(" with the "),
 	write(W),
@@ -193,7 +280,7 @@ playerDisprove(S, W, R, Suggester, Disprover):-
 		nextPlayer(Disprover, N),
 		disproveSuggestion(S, W, R, Suggester, N);
 	B == y ->
-		write("we disproved him\n")).
+		write("we disproved him\n")). %can add guess function
 
 opponentDisprove(S, W, R, Suggester, Disprover):-
 	write("Can "),
@@ -216,7 +303,7 @@ opponentDisproveHelp(Suggester, Disprover):-
 
 		write(Disprover),
 		write(" showed card to "),
-		write(Suggester),
+		write(Suggester), %can add guess function
 		nl
 	).
 
@@ -224,24 +311,24 @@ takeOpponentTurn(Player) :-
 	write("\nIts "),
 	write(Player),
 	write("'s turn.\n"),
-	write('Enter "menu." to see available actions\n'),
+	write('Enter "menu." anytime to see available actions\n'),
 	opponentTurnLoop(Player).
 
 opponentTurnLoop(Player):-
+	write("Does "), write(Player), write(" make a suggestion?\n enter y/n \n"),
+
 	read(Action),
 	(Action == menu ->
-		displayTurnMenu,
+		displayOppoMenu,
 		opponentTurnLoop(Player);
 	Action == checkDetectiveNotes ->
 		displayDetectiveNotes,
 		opponentTurnLoop(Player);
-	Action == makeSuggestion ->
+	Action == y ->
 		makeSuggestion(Player),
+		opponentAccusation(Player),
 		opponentTurnLoop(Player);
-	Action == makeAccusation ->
-		write("not implemented yet\n"),
-		opponentTurnLoop(Player);
-	Action == endTurn ->
+	Action == n ->
 		nextPlayer(Player, Next),
 		takeTurn(Next);
 	Action == quitGame ->
@@ -253,7 +340,27 @@ opponentTurnLoop(Player):-
 		write('Enter "menu." to see available actions\n'),
 		opponentTurnLoop(Player)).
 
-quitGame(quit).
+opponentAccusation(Player) :-
+	write("Does "), write(Player), write(" make an accusation? y\n\n"),
+	read(Action),
+	(Action == menu ->
+		displayOppoMenu,
+		opponentAccusation(Player);
+	Action == y ->
+		makeAccusation(Player);
+	Action == n ->
+		nextPlayer(Player, Next),
+		takeTurn(Next);
+	Action == quitGame ->
+		quitGame(quit);
+	% else
+		nl,
+		write(Action),
+		write(" is not a valid action.\n"),
+		opponentAccusation(Player)).
+
+quitGame(quit) :-
+	write("Thank you for your playing!\n").
 
 init :-
 	write('Clue Assistant V1.0\n\n'),
@@ -284,7 +391,6 @@ reInitVersion(n):- initVersion.
 reInitVersion(y).
 
 displayCardLising() :-
->>>>>>> 8989d1f9d7a91e2c2dc36818b1ba2d8952edeb7c
 	write('------Character list:\n'),
 	findall(N1,suspect(N1),L1),
 	printline(L1),
@@ -408,7 +514,7 @@ initPlayers :-
 	write('First enter the player who goes first,\n'),
 	write('then the player who goes second, and continue until the last player.\n'),
 	write('As before use only lowercase and single words per player.\n'),
-	write('After entering all players, enter "done." to finish.\n'),
+	write('After entering all players, enter "done." to finish\n'),
 	read(StartPlayer),
 	initPlayer(StartPlayer),
 	retract(nextPlayer(LastPlayer, done)),
@@ -487,139 +593,4 @@ printline([H|T]) :-
 	write(H),nl,
 	printline(T).
 
-<<<<<<< HEAD
-play :-
-	getValidNumPlayer(NumP),	
-	assert(numplayer(NumP)),
-	iD,
-	getValidCards,
-	turns.
 
-turns :-
-        write("Are you the first one? (y/n)\n"),
-        getValidChar(Char),
-        ((Char = 'y',
-	suggest,
-	win);
-        (Char = 'n',
-	turn(1))).
-
-suggest.
-turn(Num) :-
-	write("Does opponent "),write(Num), write( "reach a new room? (y/n)\n"),
-	getValidChar(Char),
-	((Char = 'y',
-	write("What character did he guess? (e.g. 'green.')\n"),
-	getValidCharacter(Name1),
-	write("What room did he guess? (e.g. 'hall.'\n"),
-	getValidRoom(Name2),
-	write("What weapon did he guess? (e.g. 'knife.'\n"),
-	getValidWeapon(Name3),
-	(
-	write("Does any player now need to/has reply to his/her suggestion? (y/n)\n"),
-	getValidChar(Char2),
-	((Char2 = 'y',
-	write("Please enter his position relative to first player, you are number 0 whereever you position is, the person after you is the position of person before you plus 1')\n"),
-	getValidNum(Num2),
-	(Num2 = 0,
-	write("if you have more than 1 card match").
-
-getValidNum(Num) :-
-	read(N),
-	numplayer(Total),
-	((N < Total,
-	Num = N);
-	(N >= Total,
-	getValidNum(Num))).
-
-
-getValidChar(Char) :-
-	read(C),
-	((C = 'y',
-	Char = 'y');
-	(C = 'n',
-	Char = 'n');
-	(write("enter 'y.' or 'n.'\n"),
-	getValidChar(Char))).
-
-iD :-
-	write("Which character did you choose?\n"),
-	read(Name),
-	((character(Name),
-	assert(id(Name)));
-	(\+ character(Name),
-	write("invalid name, please enter again\n"),
-	iD)).
-
-getValidCards :-
-	write('What are the cards you have right now? (eg."pipe." or "green." You can enter one at a time, enter "fin." if done)\n'),
-	read(Name),
-	(validName(Name,0)
-	;
-	(\+ validName(Name,0),
-	write("Please enter a valid card name\n"),
-	getValidCards)).
-
-getValidCharacter(Name) :-
-	read(N),
-	((character(N),
-	Name = N);
-	(\+ character(N),
-	write("invalid character!\n"),
-	getValidCharacter(Name))).
-
-getValidRoom(Name) :-
-	read(N),
-	((room(N),
-	Name = N);
-	(\+ room(Name),
-	write("invalid room!\n"),
-	getValidRoom(Name))).
-
-getValidWeapon(Name) :-
-	read(N),
-	((weapon(N),
-	Name = N);
-	(\+ weapon(N),
-	write("invalid weapon!\n"),
-	getValidWeapn(Name))).
-
-validName(fin,_).
-validName(Name,ID) :-
-	character(Name),
-	assert(my(Name)),
-	
-	getValidCards.
-validName(Name.ID) :-
-	room(Name),
-	assert(my(Name)),
-	getValidCards.
-validName(Name,ID) :- 
-	weapon(Name),
-	assert(my(Name)),
-	getValidCards.
-
-validName2(fin,_).
-validName2(ID) :-
-        character(Name),
-        assert(known(character(Name),ID)),
-        getValidCards.
-validName2(ID) :-
-        room(Name),
-        assert(known(room(Name),ID)),
-        getValidCards.
-validName2(ID) :-
-        weapon(Name),
-        assert(known(weapon(Name),ID)),
-
-getValidNumPlayer(NumPlayer) :-
-        write('How many players are there? (It is better to have 3-6 players)\n example input: "3."\n'),
-        read(Num),
-	((number(Num),
-        NumPlayer = Num);
-        (\+ number(Num),
-        write("You should enter a number\n"),
-	getValidNumPlayer(NumPlayer))).
-=======
-
->>>>>>> 8989d1f9d7a91e2c2dc36818b1ba2d8952edeb7c
