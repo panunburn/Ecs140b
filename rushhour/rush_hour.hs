@@ -158,6 +158,7 @@ generateNewUp parentState = map transpose (generateNewLeft (transpose parentStat
 -- a heuristic function
 -- most important value is the number of elements till the destination, the less the better
 -- second important value is the number of empty spaces till the destination, the more the better
+-- might add more heuristic functions for cars other than 'X', to solve more complex rush hour game
 evalState state
     | null state = 1000000
     | otherwise  =  (6 - charPos 'X' (state!!2))*100 - emptyOnRight*50
